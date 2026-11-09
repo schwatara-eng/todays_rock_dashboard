@@ -153,6 +153,10 @@ def main():
     # min_df=2면 '주제 2개 이상에 나온 단어'만 남아 주제가 적을 때 단어가 전부 사라진다.
     vectorizer = CountVectorizer(tokenizer=korean_tokenizer, token_pattern=None)
     topic_model = BERTopic(
+        # 기본값 "english"는 단어를 세기 전에 영어·숫자 외 글자를 전부 지운다.
+        # 한국어 문장이 통째로 사라지지 않도록 multilingual로 둔다.
+        # (임베딩은 직접 넘기므로 다국어 모델을 따로 내려받지 않는다)
+        language="multilingual",
         umap_model=UMAP(n_neighbors=15, n_components=5, min_dist=0.0,
                         metric="cosine", random_state=RANDOM_STATE),
         hdbscan_model=cluster_model,
