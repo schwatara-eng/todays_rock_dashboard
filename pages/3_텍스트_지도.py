@@ -53,58 +53,73 @@ st.divider()
 # 첫째 줄: 지도
 st.header("소개 문장으로 그린 지도")
 
-map_col, map_note = st.columns([3, 1])
+# 그래프를 먼저 그릴 자리를 잡아두고, 옵션은 그 아래에 배치한다.
+# (Streamlit은 위에서 아래로 실행되므로 옵션 값을 먼저 읽은 뒤 이 자리에 그래프를 채운다)
+map_area = st.container()
 
 color_options = ["주제 (BERTopic)", "편집자 기분 라벨", "에너지", "국내·해외", "연대", "추가 시기 (곡 번호)"]
 
-with map_note:
-    color_by = st.radio("점 색 기준", color_options, key="map_color")
+color_by = st.radio("점 색 기준", color_options, key="map_color", horizontal=True)
 
+option_col, topic_col = st.columns(2)
+
+with option_col:
     picked_mood = None
     if color_by == "편집자 기분 라벨":
         picked_mood = st.selectbox("강조할 기분", MOODS, format_func=MOOD_KO.get)
         st.caption("한 곡에 기분이 여러 개라서, 고른 기분이 붙은 곡만 색칠해.")
-    if color_by == "추가 시기 (곡 번호)":
+    elif color_by == "추가 시기 (곡 번호)":
         st.caption(
             "1~500번은 처음 만든 목록, 501번 이후는 후보 목록으로 추가한 곡이야. "
             "두 시기의 소개 문장 문체가 달라서 지도에서도 갈라져 보여."
         )
+    else:
+        st.caption("마우스 휠로 확대, 드래그로 이동할 수 있어. 축 숫자 자체에는 의미가 없어.")
 
+with topic_col:
     picked_topics = st.multiselect(
         "주제만 골라 보기",
         topics["topic_name"].tolist(),
         placeholder="전체",
     )
-    st.caption("마우스 휠로 확대, 드래그로 이동할 수 있어. 축 숫자 자체에는 의미가 없어.")
 
-with map_col:
+# 범례는 그래프 아래에 가로로 펼친다
+def bottom_legend(columns=4):
+    return alt.Legend(orient="bottom", direction="horizontal", columns=columns,
+                      symbolLimit=40, labelLimit=200, titleOrient="left")
+
+with map_area:
     plot = songs.copy()
     if picked_topics:
         plot = plot.loc[plot["topic_name"].isin(picked_topics)]
 
     if color_by == "주제 (BERTopic)":
         color = alt.Color("topic_name:N", title="주제", scale=alt.Scale(scheme="category20"),
-                          legend=alt.Legend(columns=1, symbolLimit=40))
+                          legend=bottom_legend(columns=4))
     elif color_by == "편집자 기분 라벨":
         plot["label"] = plot[f"mood_{picked_mood}"].map(
             {1: f"{MOOD_KO[picked_mood]} 라벨 있음", 0: "없음"})
         color = alt.Color("label:N", title="기분 라벨",
                           scale=alt.Scale(domain=[f"{MOOD_KO[picked_mood]} 라벨 있음", "없음"],
-                                          range=["#e4572e", "#d0d0d0"]))
+                                          range=["#e4572e", "#d0d0d0"]),
+                          legend=bottom_legend(columns=2))
     elif color_by == "에너지":
-        color = alt.Color("energy:O", title="에너지", scale=alt.Scale(scheme="oranges"))
+        color = alt.Color("energy:O", title="에너지", scale=alt.Scale(scheme="oranges"),
+                          legend=bottom_legend(columns=5))
     elif color_by == "국내·해외":
-        color = alt.Color("region:N", title="구분")
+        color = alt.Color("region:N", title="구분", legend=bottom_legend(columns=2))
     elif color_by == "연대":
-        color = alt.Color("decade:N", title="연대", scale=alt.Scale(scheme="viridis"))
+        color = alt.Color("decade:N", title="연대", scale=alt.Scale(scheme="viridis"),
+                          legend=bottom_legend(columns=7))
     else:
         plot["batch"] = (plot["song_id"] > 500).map({False: "1~500번", True: "501번 이후"})
         color = alt.Color("batch:N", title="추가 시기",
-                          scale=alt.Scale(domain=["1~500번", "501번 이후"], range=["#4c78a8", "#f58518"]))
+                          scale=alt.Scale(domain=["1~500번", "501번 이후"], range=["#4c78a8", "#f58518"]),
+                          legend=bottom_legend(columns=2))
 
     chart = (
         alt.Chart(plot)
-        .mark_circle(size=55, opacity=0.8)
+        .mark_circle(size=60, opacity=0.8)
         .encode(
             x=alt.X("x:Q", axis=None),
             y=alt.Y("y:Q", axis=None),
@@ -118,7 +133,7 @@ with map_col:
                 alt.Tooltip("energy:Q", title="에너지"),
             ],
         )
-        .properties(height=560)
+        .properties(height=640)
         .interactive()
     )
     st.altair_chart(chart, width="stretch")
