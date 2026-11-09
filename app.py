@@ -75,7 +75,7 @@ with decade_col:
         )
         .properties(height=320)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     st.caption(
         f"{region} {len(target)}곡 기준 · 국내와 해외는 곡 수 차이가 커서 "
         "둘을 비교할 땐 비율로 보는 게 공정해."
@@ -136,7 +136,7 @@ with heat_col:
     labels = base.mark_text(fontSize=14).encode(
         text=alt.Text(f"{basis}:Q", format=text_format),
     )
-    st.altair_chart((rects + labels).properties(height=300), use_container_width=True)
+    st.altair_chart((rects + labels).properties(height=300), width="stretch")
 
 with st.expander("추천 후보가 가장 적은 조합은?"):
     thin = mood_weather.sort_values("songs").head(3)
@@ -210,7 +210,7 @@ with energy_col:
                 ],
             )
         )
-    st.altair_chart(chart.properties(height=320), use_container_width=True)
+    st.altair_chart(chart.properties(height=320), width="stretch")
     st.caption("곡마다 기분이 여러 개 붙을 수 있어서, 한 곡이 여러 막대에 함께 들어가.")
 
 st.divider()
@@ -241,7 +241,7 @@ with region_energy_col:
         )
         .properties(height=300)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     region_avg = songs.groupby("region")["energy"].mean()
     st.caption(
         f"평균 에너지 · 국내 {region_avg.get('국내', 0):.2f} · 해외 {region_avg.get('해외', 0):.2f}"
@@ -271,7 +271,7 @@ with region_mood_col:
         )
         .properties(height=300)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     st.caption(f"국내 {korean_count}곡 · 해외 {total - korean_count}곡 각각을 100으로 놓은 비율")
 
 st.divider()
