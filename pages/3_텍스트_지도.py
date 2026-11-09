@@ -55,7 +55,7 @@ st.header("소개 문장으로 그린 지도")
 
 map_col, map_note = st.columns([3, 1])
 
-color_options = ["주제 (BERTopic)", "편집자 기분 라벨", "에너지", "국내·해외", "연대"]
+color_options = ["주제 (BERTopic)", "편집자 기분 라벨", "에너지", "국내·해외", "연대", "추가 시기 (곡 번호)"]
 
 with map_note:
     color_by = st.radio("점 색 기준", color_options, key="map_color")
@@ -64,6 +64,11 @@ with map_note:
     if color_by == "편집자 기분 라벨":
         picked_mood = st.selectbox("강조할 기분", MOODS, format_func=MOOD_KO.get)
         st.caption("한 곡에 기분이 여러 개라서, 고른 기분이 붙은 곡만 색칠해.")
+    if color_by == "추가 시기 (곡 번호)":
+        st.caption(
+            "1~500번은 처음 만든 목록, 501번 이후는 후보 목록으로 추가한 곡이야. "
+            "두 시기의 소개 문장 문체가 달라서 지도에서도 갈라져 보여."
+        )
 
     picked_topics = st.multiselect(
         "주제만 골라 보기",
@@ -90,8 +95,12 @@ with map_col:
         color = alt.Color("energy:O", title="에너지", scale=alt.Scale(scheme="oranges"))
     elif color_by == "국내·해외":
         color = alt.Color("region:N", title="구분")
-    else:
+    elif color_by == "연대":
         color = alt.Color("decade:N", title="연대", scale=alt.Scale(scheme="viridis"))
+    else:
+        plot["batch"] = (plot["song_id"] > 500).map({False: "1~500번", True: "501번 이후"})
+        color = alt.Color("batch:N", title="추가 시기",
+                          scale=alt.Scale(domain=["1~500번", "501번 이후"], range=["#4c78a8", "#f58518"]))
 
     chart = (
         alt.Chart(plot)

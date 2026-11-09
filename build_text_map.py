@@ -43,6 +43,13 @@ NEIGHBORS = 5           # 곡마다 저장할 비슷한 곡 수
 RANDOM_STATE = 42       # 같은 결과를 다시 얻기 위한 고정값
 NAME_TOPICS = True      # False면 주제 이름 대신 키워드만 쓴다 (API 비용 없음)
 
+# AI가 지은 주제 이름을 사람이 고칠 때 쓴다. {topic_id: "새 이름"}
+# topic_id는 RANDOM_STATE와 곡 데이터가 같으면 다시 실행해도 그대로다.
+# (곡을 추가·수정하면 번호가 바뀔 수 있으니 결과를 보고 다시 맞춰야 해)
+TOPIC_NAME_OVERRIDES = {
+    11: "베이스가 이끄는 그루브",   # AI 이름 '관계의 무게와 위로' → 분위기 문장 대부분이 베이스 묘사
+}
+
 
 def get_api_key() -> str:
     key = os.getenv("OPENAI_API_KEY", "")
@@ -207,6 +214,8 @@ def main():
         # 이름이 겹치면 페이지에서 두 주제가 하나로 합쳐지니 번호를 붙인다
         used_names[name] = used_names.get(name, 0) + 1
         row["topic_name"] = name if used_names[name] == 1 else f"{name} ({used_names[name]})"
+        if row["topic_id"] in TOPIC_NAME_OVERRIDES:
+            row["topic_name"] = TOPIC_NAME_OVERRIDES[row["topic_id"]]
 
     topic_table = (pd.DataFrame(rows)
                    .drop(columns=["_kw", "_ex"])

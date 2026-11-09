@@ -211,6 +211,61 @@ add("국내·해외", f"국내 곡 평균 에너지는 {re_['국내']:.2f}, 해�
     f"국내 = {re_['국내']:.2f}; 해외 = {re_['해외']:.2f}",
     BASIS_ALL, S)
 
+# ── 텍스트 지도 팩트 (build_text_map.py 결과가 있을 때만) ──
+map_path, topic_path = OUT / "todays_rock_text_map.csv", OUT / "todays_rock_topics.csv"
+if map_path.exists() and topic_path.exists():
+    tm = df.merge(pd.read_csv(map_path, encoding="utf-8-sig")[["song_id", "topic_id", "topic_name"]],
+                  on="song_id")
+    tp = pd.read_csv(topic_path, encoding="utf-8-sig")
+    T = "todays_rock_topics.csv"
+    BASIS_TOPIC = (BASIS_ALL + " 텍스트 주제는 곡 소개 문장(주제·분위기·추천 이유)을 OpenAI 임베딩으로 바꾼 뒤 "
+                   "BERTopic(K-means)으로 묶은 결과. 주제 이름은 AI가 짓고 사람이 일부 수정.")
+
+    big, small = tp.sort_values("songs").iloc[-1], tp.sort_values("songs").iloc[0]
+    add("텍스트 주제", f"소개 문장을 비슷한 것끼리 묶으면 {len(tp)}개 주제로 나뉜다. "
+        f"가장 큰 주제는 '{big['topic_name']}'({big['songs']}곡), 가장 작은 주제는 "
+        f"'{small['topic_name']}'({small['songs']}곡)이다.",
+        "; ".join(f"{r.topic_name} = {r.songs}곡" for r in tp.sort_values("songs", ascending=False).itertuples()),
+        BASIS_TOPIC, T)
+
+    # 주제별 기분 라벨 비율
+    share = tm.groupby("topic_name")[[f"mood_{m}" for m in MOODS]].mean() * 100
+    top_mood = share.idxmax(axis=1).str.replace("mood_", "")
+    top_pct = share.max(axis=1)
+    hi = top_pct.sort_values(ascending=False).head(2)
+    add("텍스트 주제×기분", "소개 문장으로 묶은 주제 중 일부는 편집자 기분 라벨과 거의 일치한다. "
+        + ", ".join(f"'{t}' 주제는 {top_pct[t]:.1f}%가 {MOOD_KO[top_mood[t]]} 라벨" for t in hi.index) + "이다.",
+        "; ".join(f"{t}: {MOOD_KO[top_mood[t]]} {top_pct[t]:.1f}%" for t in hi.index),
+        BASIS_TOPIC + " 각 주제 곡 중 해당 기분 라벨이 붙은 곡의 비율.", T)
+
+    lo = top_pct.idxmin()
+    row = share.loc[lo].sort_values(ascending=False)
+    add("텍스트 주제×기분", f"'{lo}' 주제는 기분 라벨이 가장 흩어져 있다. 가장 많은 라벨도 "
+        f"{row.iloc[0]:.1f}%({MOOD_KO[row.index[0].replace('mood_', '')]})에 그친다.",
+        "; ".join(f"{MOOD_KO[c.replace('mood_', '')]} = {v:.1f}%" for c, v in row.items()),
+        BASIS_TOPIC + " 문장은 비슷하지만 라벨이 제각각이라 라벨 재검토 후보.", T)
+
+    te = tm.groupby("topic_name")["energy"].mean().round(2).sort_values()
+    tops = te[te == te.max()].index.tolist()          # 공동 1위가 있을 수 있다
+    lows = te[te == te.min()].index.tolist()
+    names = lambda ts: ", ".join(f"'{t}'" for t in ts)
+    top_note = " (모든 곡이 에너지 5)" if te.max() == 5 else ""
+    add("텍스트 주제×에너지", f"평균 에너지가 가장 높은 주제는 {names(tops)}({te.max():.2f}){top_note}, "
+        f"가장 낮은 주제는 {names(lows)}({te.min():.2f})이다.",
+        "; ".join(f"{t} = {v:.2f}" for t, v in te.sort_values(ascending=False).items()),
+        BASIS_TOPIC, T)
+
+    # 곡이 추가된 시기(곡 번호 1~500 / 501 이후)에 따른 쏠림
+    tm["batch"] = (tm["song_id"] > 500).map({False: "1~500번", True: "501번 이후"})
+    late_all = (tm["batch"] == "501번 이후").mean() * 100
+    late = tm.groupby("topic_name")["batch"].apply(lambda b: (b == "501번 이후").mean() * 100).sort_values()
+    add("텍스트 주제×추가 시기", f"전체 곡 중 501번 이후 곡은 {late_all:.1f}%지만, 주제별로는 "
+        f"'{late.index[0]}' {late.iloc[0]:.0f}%에서 '{late.index[-1]}' {late.iloc[-1]:.0f}%까지 갈린다. "
+        "두 시기에 소개 문장을 쓴 방식이 달라 주제 묶기에 영향을 준 것으로 보인다.",
+        "; ".join(f"{t}: 501번 이후 {v:.0f}%" for t, v in late.items()),
+        BASIS_TOPIC + " 곡 번호 501번 이후는 후보 목록(todays_rock_song_candidates.csv)으로 추가한 곡. "
+        "문체 차이는 추정이며 인과관계는 확인되지 않음.", T)
+
 pd.DataFrame(facts).to_csv(OUT / "todays_rock_facts.csv", index=False, encoding="utf-8-sig")
 
 print("완료:", ", ".join(p.name for p in sorted(OUT.glob("*.csv"))))
