@@ -4,6 +4,8 @@
 
 # 🎸 오늘의 록 분석 대시보드
 
+🔗 [배포된 오늘의 록 대시보드 바로가기](https://todaysrockdashboard-n9jt6w83iqnkusa5a3sqkj.streamlit.app/)
+
 ### 무엇을 추천하고 있나 — 추천 목록 933곡의 성향 보기
 
 `Python` · `Pandas` · `Altair` · `Streamlit` · `RAG` · `UMAP` · `BERTopic`
