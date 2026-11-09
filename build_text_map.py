@@ -36,7 +36,9 @@ DATA = BASE / "data"
 EMBEDDING_CACHE = DATA / "todays_rock_embeddings.npy"
 
 # ── 조절할 수 있는 값 ─────────────────────────────────────
-MIN_TOPIC_SIZE = 15     # 주제 하나에 들어갈 최소 곡 수. 키우면 주제 수가 줄어든다.
+CLUSTER_METHOD = "kmeans"  # "kmeans": 주제 수를 직접 정함 / "hdbscan": 덩어리를 스스로 찾음
+N_TOPICS = 12           # kmeans일 때 주제 수
+MIN_TOPIC_SIZE = 15     # hdbscan일 때 주제 하나에 들어갈 최소 곡 수
 NEIGHBORS = 5           # 곡마다 저장할 비슷한 곡 수
 RANDOM_STATE = 42       # 같은 결과를 다시 얻기 위한 고정값
 NAME_TOPICS = True      # False면 주제 이름 대신 키워드만 쓴다 (API 비용 없음)
@@ -61,6 +63,9 @@ def song_text(row) -> str:
 # BERTopic은 주제마다 대표 단어를 뽑을 때 문장을 단어로 쪼갠다.
 # 한국어는 '관계의', '관계를'처럼 조사가 붙어 있어서 형태소 분석기로 명사·어근만 남긴다.
 STOPWORDS = {"분위기", "느낌", "곡", "노래", "순간", "마음", "하루", "기분", "주제", "추천", "이유", "것", "수", "때"}
+# 악기·연주 단어는 주제 이름보다 연주 설명에 가까워서 키워드에서 뺀다 (주제를 나누는 계산에는 영향 없음)
+STOPWORDS |= {"기타", "보컬", "리듬", "드럼", "베이스", "사운드", "멜로디", "후렴", "목소리",
+              "비트", "리프", "소리", "연주", "편곡", "신스", "화음"}
 
 try:
     from kiwipiepy import Kiwi
@@ -115,7 +120,7 @@ def name_topic(client: OpenAI, keywords: list[str], examples: list[str]) -> str:
 def main():
     from bertopic import BERTopic
     from bertopic.vectorizers import ClassTfidfTransformer
-    from hdbscan import HDBSCAN
+    from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import CountVectorizer
     from umap import UMAP
 
@@ -132,14 +137,25 @@ def main():
         metric="cosine", random_state=RANDOM_STATE,
     ).fit_transform(embeddings)
 
-    # 2) 주제 묶기: BERTopic 안에서는 5차원으로 줄인 뒤 HDBSCAN으로 군집
-    print("BERTopic으로 주제 묶는 중...")
-    vectorizer = CountVectorizer(tokenizer=korean_tokenizer, token_pattern=None, min_df=2)
+    # 2) 주제 묶기: BERTopic 안에서는 5차원으로 줄인 뒤 군집
+    # 소개 문장끼리 고르게 비슷해서 HDBSCAN은 덩어리를 2~3개밖에 못 찾는다.
+    # 그래서 기본은 주제 수를 직접 정하는 K-means.
+    if CLUSTER_METHOD == "hdbscan":
+        from hdbscan import HDBSCAN
+        cluster_model = HDBSCAN(min_cluster_size=MIN_TOPIC_SIZE, metric="euclidean",
+                                cluster_selection_method="eom", prediction_data=True)
+        print(f"BERTopic으로 주제 묶는 중... (HDBSCAN, 최소 {MIN_TOPIC_SIZE}곡)")
+    else:
+        cluster_model = KMeans(n_clusters=N_TOPICS, random_state=RANDOM_STATE, n_init=10)
+        print(f"BERTopic으로 주제 묶는 중... (K-means, 주제 {N_TOPICS}개)")
+
+    # min_df는 쓰지 않는다. BERTopic은 주제별로 문장을 하나로 합친 뒤 단어를 세서,
+    # min_df=2면 '주제 2개 이상에 나온 단어'만 남아 주제가 적을 때 단어가 전부 사라진다.
+    vectorizer = CountVectorizer(tokenizer=korean_tokenizer, token_pattern=None)
     topic_model = BERTopic(
         umap_model=UMAP(n_neighbors=15, n_components=5, min_dist=0.0,
                         metric="cosine", random_state=RANDOM_STATE),
-        hdbscan_model=HDBSCAN(min_cluster_size=MIN_TOPIC_SIZE, metric="euclidean",
-                              cluster_selection_method="eom", prediction_data=True),
+        hdbscan_model=cluster_model,
         vectorizer_model=vectorizer,
         # 모든 주제에 고르게 나오는 단어(기타, 리듬 등)의 가중치를 낮춘다
         ctfidf_model=ClassTfidfTransformer(reduce_frequent_words=True),
