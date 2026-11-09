@@ -112,7 +112,7 @@ with map_col:
         .properties(height=560)
         .interactive()
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     st.caption(f"{len(plot)}곡 표시 중")
 
 st.divider()
@@ -173,7 +173,7 @@ heat = base.mark_rect().encode(
 )
 text = base.mark_text(fontSize=12).encode(text=alt.Text("pct:Q", format=".0f"))
 st.altair_chart((heat + text).properties(height=max(260, 32 * len(topic_order))),
-                use_container_width=True)
+                width="stretch")
 
 with st.expander("주제별로 가장 많이 붙은 기분"):
     dominant = topic_mood.loc[topic_mood.groupby("topic_name")["pct"].idxmax()]
