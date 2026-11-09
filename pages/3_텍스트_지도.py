@@ -169,7 +169,7 @@ topic_mood["mood_ko"] = topic_mood["mood"].str.replace("mood_", "").map(MOOD_KO)
 topic_order = topics["topic_name"].tolist()
 
 base = alt.Chart(topic_mood).encode(
-    x=alt.X("mood_ko:N", title="편집자 기분 라벨", sort=MOOD_ORDER),
+    x=alt.X("mood_ko:N", axis=alt.Axis(labelAngle=0), title="편집자 기분 라벨", sort=MOOD_ORDER),
     y=alt.Y("topic_name:N", title="텍스트 주제", sort=topic_order),
 )
 heat = base.mark_rect().encode(

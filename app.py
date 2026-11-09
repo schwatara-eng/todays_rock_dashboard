@@ -65,7 +65,7 @@ with decade_col:
         alt.Chart(decade)
         .mark_bar()
         .encode(
-            x=alt.X("decade:N", title="연대", sort=None),
+            x=alt.X("decade:N", axis=alt.Axis(labelAngle=0), title="연대", sort=None),
             y=alt.Y(f"{y_field}:Q", title=y_title),
             tooltip=[
                 alt.Tooltip("decade:N", title="연대"),
@@ -120,7 +120,7 @@ with heat_col:
     text_format = ".2f" if is_lift else (".0f" if basis == "songs" else ".1f")
 
     base = alt.Chart(mood_weather).encode(
-        x=alt.X("mood_ko:N", title="기분", sort=MOOD_ORDER),
+        x=alt.X("mood_ko:N", axis=alt.Axis(labelAngle=0), title="기분", sort=MOOD_ORDER),
         y=alt.Y("weather_ko:N", title="날씨", sort=WEATHER_ORDER),
     )
     rects = base.mark_rect().encode(
@@ -179,7 +179,7 @@ with energy_col:
             alt.Chart(avg)
             .mark_bar()
             .encode(
-                x=alt.X("mood_ko:N", title="기분", sort=MOOD_ORDER),
+                x=alt.X("mood_ko:N", axis=alt.Axis(labelAngle=0), title="기분", sort=MOOD_ORDER),
                 y=alt.Y("mean:Q", title="평균 에너지", scale=alt.Scale(domain=[0, 5])),
                 tooltip=[
                     alt.Tooltip("mood_ko:N", title="기분"),
@@ -194,7 +194,7 @@ with energy_col:
             alt.Chart(dist)
             .mark_bar()
             .encode(
-                x=alt.X("mood_ko:N", title="기분", sort=MOOD_ORDER),
+                x=alt.X("mood_ko:N", axis=alt.Axis(labelAngle=0), title="기분", sort=MOOD_ORDER),
                 y=alt.Y("songs:Q", stack="normalize", title="비율", axis=alt.Axis(format="%")),
                 color=alt.Color(
                     "energy:O",
@@ -228,7 +228,7 @@ with region_energy_col:
         alt.Chart(re_dist)
         .mark_bar()
         .encode(
-            x=alt.X("energy:O", title="에너지"),
+            x=alt.X("energy:O", axis=alt.Axis(labelAngle=0), title="에너지"),
             xOffset="region:N",
             y=alt.Y("pct:Q", title="비율 (%)"),
             color=alt.Color("region:N", title="구분"),
@@ -259,7 +259,7 @@ with region_mood_col:
         alt.Chart(rm)
         .mark_bar()
         .encode(
-            x=alt.X("mood_ko:N", title="기분", sort=MOOD_ORDER),
+            x=alt.X("mood_ko:N", axis=alt.Axis(labelAngle=0), title="기분", sort=MOOD_ORDER),
             xOffset="region:N",
             y=alt.Y("pct:Q", title="그 기분이 붙은 곡 비율 (%)"),
             color=alt.Color("region:N", title="구분"),
