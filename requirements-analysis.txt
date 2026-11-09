@@ -1,0 +1,9 @@
+# 텍스트 지도(build_text_map.py)를 로컬에서 만들 때만 필요한 패키지
+# 배포용 Streamlit 앱에는 필요 없어 (requirements.txt만 쓰면 돼)
+-r requirements.txt
+numpy>=1.26
+scikit-learn>=1.5
+umap-learn>=0.5.6
+hdbscan>=0.8.38
+bertopic>=0.16
+kiwipiepy>=0.18

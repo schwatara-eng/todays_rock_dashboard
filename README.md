@@ -1,12 +1,12 @@
 <div align="center">
 
-<sub>SLIDE 01 / 07</sub>
+<sub>SLIDE 01 / 08</sub>
 
 # 🎸 오늘의 록 분석 대시보드
 
 ### 무엇을 추천하고 있나 — 추천 목록 933곡의 성향 보기
 
-`Python` · `Pandas` · `Altair` · `Streamlit` · `RAG`
+`Python` · `Pandas` · `Altair` · `Streamlit` · `RAG` · `UMAP` · `BERTopic`
 
 </div>
 
@@ -14,7 +14,7 @@
 
 ---
 
-<sub>SLIDE 02 / 07</sub>
+<sub>SLIDE 02 / 08</sub>
 
 ## 🔎 출발 질문
 
@@ -32,7 +32,7 @@ data_backup.json  build_data.py   Pandas groupby  기분×날씨  표 2개   임
 
 ---
 
-<sub>SLIDE 03 / 07</sub>
+<sub>SLIDE 03 / 08</sub>
 
 ## 🌦️ 기분 × 날씨 — 우연보다 자주 붙는 조합
 
@@ -54,7 +54,7 @@ data_backup.json  build_data.py   Pandas groupby  기분×날씨  표 2개   임
 
 ---
 
-<sub>SLIDE 04 / 07</sub>
+<sub>SLIDE 04 / 08</sub>
 
 ## 🕳️ 추천 후보가 얇은 칸
 
@@ -75,7 +75,7 @@ data_backup.json  build_data.py   Pandas groupby  기분×날씨  표 2개   임
 
 ---
 
-<sub>SLIDE 05 / 07</sub>
+<sub>SLIDE 05 / 08</sub>
 
 ## ⚡ 많은 장르 ≠ 강렬한 장르
 
@@ -88,7 +88,7 @@ data_backup.json  build_data.py   Pandas groupby  기분×날씨  표 2개   임
 
 ---
 
-<sub>SLIDE 06 / 07</sub>
+<sub>SLIDE 06 / 08</sub>
 
 ## 💬 분석 Q&A (RAG)
 
@@ -104,13 +104,42 @@ data_backup.json  build_data.py   Pandas groupby  기분×날씨  표 2개   임
 
 ---
 
-<sub>SLIDE 07 / 07</sub>
+<sub>SLIDE 07 / 08</sub>
+
+## 🗺️ 텍스트 지도 (임베딩 + UMAP + BERTopic)
+
+> **편집자가 붙인 기분 라벨과, 소개 문장이 실제로 말하는 감정은 같을까?**
+
+```
+소개 문장 → 임베딩 → UMAP 2D 지도 → BERTopic 주제 묶기 → AI 주제 이름 → 이웃 곡 5개
+theme·tone·reason  text-embedding-3-small  좌표 x,y   한국어 형태소(Kiwi) 키워드   gpt-4.1-mini   코사인 유사도
+```
+
+- 곡명·아티스트는 빼고 **소개 문장만** 계산에 넣음
+- 지도 색을 **주제 · 편집자 기분 라벨 · 에너지 · 국내/해외 · 연대**로 바꿔 볼 수 있음
+- **주제 × 기분 히트맵**으로 텍스트 주제와 편집자 라벨이 얼마나 겹치는지 비교
+- 곡을 고르면 소개 문장이 가장 비슷한 곡 5개를 보여줌
+
+무거운 계산은 로컬에서 한 번만 하고 결과 CSV만 배포한다.
+
+```bash
+pip install -r requirements-analysis.txt
+python build_text_map.py
+```
+
+<br>
+
+---
+
+<sub>SLIDE 08 / 08</sub>
 
 ## 🗂️ 파일 구성 · 실행
 
 ```
 app.py                  대시보드 첫 화면
 pages/2_분석_QA.py       RAG Q&A
+pages/3_텍스트_지도.py    임베딩 지도 · 주제 · 비슷한 곡
+build_text_map.py       텍스트 지도 CSV 만들기 (로컬에서 한 번)
 utils/todays_rock_rag.py 사실표 읽기 · 유사도 · 답변 생성
 build_data.py           source/ → data/ CSV 다시 만들기
 source/                 원본 (data_backup.json, 후보 목록 CSV)
