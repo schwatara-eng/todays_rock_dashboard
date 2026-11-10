@@ -139,8 +139,8 @@ python build_text_map.py
 
 ```
 app.py                  대시보드 첫 화면
-pages/2_분석_QA.py       RAG Q&A
-pages/3_텍스트_지도.py    임베딩 지도 · 주제 · 비슷한 곡
+pages/2_텍스트_지도.py    임베딩 지도 · 주제 · 비슷한 곡
+pages/3_분석_QA.py       RAG Q&A
 build_text_map.py       텍스트 지도 CSV 만들기 (로컬에서 한 번)
 utils/todays_rock_rag.py 사실표 읽기 · 유사도 · 답변 생성
 build_data.py           source/ → data/ CSV 다시 만들기
