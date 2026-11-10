@@ -98,16 +98,32 @@ with st.expander("예시 질문"):
         "- 어떤 기분과 날씨 조합이 우연보다 자주 붙어 있어?"
     )
 
+def md(text: str) -> str:
+    # 마크다운에서 '~'가 취소선으로 바뀌지 않게 막는다 (예: 1~500번)
+    return str(text).replace("~", "\\~")
+
+
+def render_source(source: dict) -> None:
+    """근거 하나를 항목별로 줄을 나눠 보여준다."""
+    st.markdown(f"**[{source['id']}] {md(source['title'])}**")
+    fields = source.get("fields")
+    if not fields:  # 라벨 안내·해석 기준 같은 안내 문서
+        st.markdown(md(source["text"]))
+        return
+    numbers = [n.strip() for n in fields["숫자"].split(";") if n.strip()]
+    lines = [f"- **분야** · {md(fields['분야'])}", "- **숫자**"]
+    lines += [f"    - {md(n)}" for n in numbers]
+    lines += [f"- **기준** · {md(fields['기준'])}", f"- **출처** · `{fields['출처']}`"]
+    st.markdown("\n".join(lines))
+
+
 for message in st.session_state["messages"]:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        st.markdown(md(message["content"]))
         if message.get("sources"):
             with st.expander("찾아온 근거 보기"):
                 for source in message["sources"]:
-                    st.markdown(
-                        f"**[{source['id']}] {source['title']}**  \n"
-                        f"{source['text']}"
-                    )
+                    render_source(source)
 
 question = st.chat_input("오늘의 록 데이터에 관해 질문해")
 if question:
@@ -154,13 +170,10 @@ if question:
             "sources": retrieved,
         })
         with st.chat_message("assistant"):
-            st.markdown(answer)
+            st.markdown(md(answer))
             with st.expander("찾아온 근거 보기"):
                 for source in retrieved:
-                    st.markdown(
-                        f"**[{source['id']}] {source['title']}**  \n"
-                        f"{source['text']}"
-                    )
+                    render_source(source)
     except Exception as error:
         st.error(
             "검색이나 답변 생성 중 문제가 생겼어. API 사용량과 키 설정을 확인해 줘. "

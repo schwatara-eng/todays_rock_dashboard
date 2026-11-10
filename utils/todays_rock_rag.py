@@ -58,6 +58,13 @@ def load_fact_documents(path: str | Path) -> list[dict[str, str]]:
             ),
             "kind": "fact",
             "category": str(row["분야"]).strip(),
+            # 화면에 줄을 나눠 보여주려고 항목별로 따로 둔다
+            "fields": {
+                "분야": str(row["분야"]).strip(),
+                "숫자": str(row["숫자"]).strip(),
+                "기준": str(row["기준"]).strip(),
+                "출처": str(row["출처"]).strip(),
+            },
         })
     return documents
 
@@ -97,7 +104,9 @@ def answer_question(
         "수치 질문에는 분자와 분모 또는 계산 방법을 밝혀. 비율 차이는 퍼센트포인트(%p)로 표현해. "
         "기분·날씨·에너지는 편집자가 붙인 라벨이라는 점을 혼동하지 말고, "
         "근거 ID를 문장 끝에 [F01]처럼 붙여. 검색 근거에 없는 ID를 만들지 마. "
-        "인과관계는 단정하지 말고 한국어로 간결하게 답해.\n\n"
+        "인과관계는 단정하지 말고 한국어로 간결하게 답해. "
+        "읽기 쉽게 문장마다 줄을 바꾸고, 비교할 수치가 3개 이상이면 '- ' 목록으로 한 줄에 하나씩 정리해. "
+        "핵심 답을 첫 줄에 쓰고, 계산 방법이나 주의할 점은 그 아래 줄에 따로 써.\n\n"
         f"검색된 근거:\n{evidence}"
     )
     messages = [{"role": "system", "content": system_prompt}]
