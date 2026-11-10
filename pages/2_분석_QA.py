@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 import streamlit as st
 from openai import OpenAI
@@ -103,10 +104,22 @@ def md(text: str) -> str:
     return str(text).replace("~", "\\~")
 
 
+FIELD_PATTERN = re.compile(
+    r"분야:\s*(?P<분야>.*?)\s*내용:.*?숫자:\s*(?P<숫자>.*?)\s*기준:\s*(?P<기준>.*?)\s*출처:\s*(?P<출처>.*)$",
+    re.S,
+)
+
+
+def parse_fields(text: str) -> dict | None:
+    """'분야: … 숫자: … 기준: … 출처: …' 형식의 근거 문장을 항목별로 나눈다."""
+    match = FIELD_PATTERN.search(text)
+    return {k: v.strip() for k, v in match.groupdict().items()} if match else None
+
+
 def render_source(source: dict) -> None:
     """근거 하나를 항목별로 줄을 나눠 보여준다."""
     st.markdown(f"**[{source['id']}] {md(source['title'])}**")
-    fields = source.get("fields")
+    fields = source.get("fields") or parse_fields(source.get("text", ""))
     if not fields:  # 라벨 안내·해석 기준 같은 안내 문서
         st.markdown(md(source["text"]))
         return
